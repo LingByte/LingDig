@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="专业的DNS查询工具，支持多种记录类型查询">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LingDig">
+    <meta name="msapplication-TileColor" content="#8b5cf6">
+    <meta name="msapplication-config" content="/static/browserconfig.xml">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-192x192.png">
+    <link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg" color="#8b5cf6">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Stylesheets -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧工具面板 -->
+        <div class="query-panel">
+            <div class="panel-header">
+                <h1>LingDig</h1>
+                <p>网络工具集</p>
+            </div>
+
+            <!-- 工具切换 -->
+            <div class="tool-tabs">
+                <button class="tab-btn active" data-tool="dns">
+                    <i class="fas fa-search"></i> DNS查询
+                </button>
+                <button class="tab-btn" data-tool="curl">
+                    <i class="fas fa-globe"></i> HTTP请求
+                </button>
+            </div>
+
+            <!-- 表单容器 -->
+            <div class="forms-container">
+                <!-- DNS查询表单 -->
+                <form id="digForm" class="tool-form active" data-tool="dns">
+                    <div class="form-group">
+                        <label for="domain">域名</label>
+                        <input type="text" id="domain" name="domain" placeholder="example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="record_type">记录类型</label>
+                        <select id="record_type" name="record_type">
+                            <option value="A">A</option>
+                            <option value="AAAA">AAAA</option>
+                            <option value="CNAME">CNAME</option>
+                            <option value="MX">MX</option>
+                            <option value="NS">NS</option>
+                            <option value="TXT">TXT</option>
+                            <option value="SOA">SOA</option>
+                            <option value="PTR">PTR</option>
+                            <option value="SRV">SRV</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="server">DNS服务器</label>
+                        <select id="server" name="server">
+                            <option value="8.8.8.8:53">8.8.8.8 (Google)</option>
+                            <option value="1.1.1.1:53">1.1.1.1 (Cloudflare)</option>
+                            <option value="114.114.114.114:53">114.114.114.114</option>
+                            <option value="223.5.5.5:53">223.5.5.5 (阿里)</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customServerGroup" style="display: none;">
+                        <label for="customServer">自定义服务器</label>
+                        <input type="text" id="customServer" placeholder="8.8.4.4:53">
+                    </div>
+
+                    <button type="submit" class="query-btn">
+                        <span class="btn-text">查询</span>
+                        <i class="btn-icon fas fa-search"></i>
+                    </button>
+                </form>
+
+                <!-- HTTP请求表单 -->
+                <form id="curlForm" class="tool-form" data-tool="curl">
+                    <div class="form-group">
+                        <label for="curl_url">URL</label>
+                        <input type="text" id="curl_url" name="url" placeholder="https://api.example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="curl_method">请求方法</label>
+                        <select id="curl_method" name="method">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="OPTIONS">OPTIONS</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="curl_headers">请求头 (JSON格式)</label>
+                        <textarea id="curl_headers" name="headers_json" placeholder='{"Content-Type": "application/json"}'></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="curl_body">请求体</label>
+                        <textarea id="curl_body" name="body" placeholder='{"key": "value"}'></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="curl_timeout">超时(秒)</label>
+                            <input type="number" id="curl_timeout" name="timeout" value="30" min="1" max="300">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="head_only" name="head_only">
+                                <span>仅获取响应头</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="follow_redirect" name="follow_redirect" checked>
+                                <span>跟随重定向</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="verify_ssl" name="verify_ssl" checked>
+                                <span>验证SSL</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="curl_command">或粘贴curl命令</label>
+                        <textarea id="curl_command" name="curl_command" placeholder="curl -X GET https://api.example.com"></textarea>
+                    </div>
+
+                    <button type="submit" class="query-btn">
+                        <span class="btn-text">发送请求</span>
+                        <i class="btn-icon fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 右侧结果面板 -->
+        <div class="results-panel">
+            <div class="panel-header">
+                <h2>查询结果</h2>
+                <div class="result-stats" id="resultStats" style="display: none;">
+                    <span id="recordCount">0</span> 条记录
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div id="emptyState" class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <p>输入域名开始查询</p>
+                </div>
+
+                <div id="loading" class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>查询中...</p>
+                </div>
+
+                <div id="results" class="results-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="install-content">
+            <i class="fas fa-download"></i>
+            <span>安装LingDig到桌面，获得更好的使用体验</span>
+            <button id="installBtn" class="install-btn">安装</button>
+            <button id="dismissBtn" class="dismiss-btn">×</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(function(registration) {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWA 安装提示
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.style.display = 'none';
+            }
+        });
+
+        dismissBtn.addEventListener('click', () => {
+            installBanner.style.display = 'none';
+            deferredPrompt = null;
+        });
+
+        // 检测是否已安装
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('App was installed.');
+            installBanner.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
